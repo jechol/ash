@@ -48,17 +48,20 @@ defmodule Ash.Policy.Policy do
       {policy, cond_expr, complete_expr}
     end)
     |> List.foldr({false, true}, fn
-      {%__MODULE__{bypass?: true}, cond_expr, complete_expr}, {one_condition_matches, true} ->
+      {%__MODULE__{bypass?: true}, _cond_expr, complete_expr}, {one_condition_matches, true} ->
         {
-          b(cond_expr or one_condition_matches),
+          # Use complete_expr instead of cond_expr to match old behavior
+          # where bypass contributes its full expression to "at least one policy"
+          b(complete_expr or one_condition_matches),
           # Bypass can't relay to the next bypass if there is none
           complete_expr
         }
 
-      {%__MODULE__{bypass?: true}, cond_expr, complete_expr},
+      {%__MODULE__{bypass?: true}, _cond_expr, complete_expr},
       {one_condition_matches, all_policies_match} ->
         {
-          b(cond_expr or one_condition_matches),
+          # Use complete_expr instead of cond_expr to match old behavior
+          b(complete_expr or one_condition_matches),
           b(complete_expr or all_policies_match)
         }
 

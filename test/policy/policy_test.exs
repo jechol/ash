@@ -947,4 +947,61 @@ defmodule Ash.Test.Policy.Policy do
              """
     end
   end
+
+  describe "bypass policy with always-true condition" do
+    test "denies when bypass condition is true but bypass policies fail" do
+      # This test demonstrates the bug fixed in this commit.
+      # 
+      # Setup:
+      # - bypass always() do authorize_if is_admin
+      # - policy action_type(:read) do authorize_if always()
+      #
+      # Scenario: non-admin user performs create action
+      # 
+      # Before fix:
+      # 1. bypass condition (always) = true → one_condition_matches = true
+      # 2. bypass policies (is_admin) = false
+      # 3. policy condition (action_type(:read) for create) = false
+      # 4. Final: true AND (tautology) = true (WRONG! - incorrectly authorized)
+      #
+      # After fix:
+      # 1. bypass complete_expr (always AND is_admin) = false → one_condition_matches = false
+      # 2. policy condition = false
+      # 3. Final: false AND (tautology) = false (CORRECT! - properly denied)
+      
+      policies = [
+        # bypass always() do authorize_if is_admin
+        %Ash.Policy.Policy{
+          bypass?: true,
+          condition: [{Ash.Policy.Check.Static, result: true}],  # always()
+          policies: [
+            %Ash.Policy.Check{
+              type: :authorize_if,
+              check: {Ash.Policy.Check.Static, result: false},  # is_admin = false (not admin)
+              check_module: Ash.Policy.Check.Static,
+              check_opts: [result: false]
+            }
+          ]
+        },
+        # policy action_type(:read) do authorize_if always()
+        %Ash.Policy.Policy{
+          bypass?: false,
+          condition: [{Ash.Policy.Check.Static, result: false}],  # action_type(:read) for create = false
+          policies: [
+            %Ash.Policy.Check{
+              type: :authorize_if,
+              check: {Ash.Policy.Check.Static, result: true},  # always()
+              check_module: Ash.Policy.Check.Static,
+              check_opts: [result: true]
+            }
+          ]
+        }
+      ]
+
+      expression = Ash.Policy.Policy.expression(policies)
+
+      # Should deny: bypass failed and no policy condition matched
+      assert expression == false
+    end
+  end
 end
