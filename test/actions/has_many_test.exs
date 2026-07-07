@@ -157,6 +157,18 @@ defmodule Ash.Test.Actions.HasManyTest do
         argument(:comment, :map, allow_nil?: false)
         change manage_relationship(:comment, :comments, on_no_match: :error, on_match: :destroy)
       end
+
+      update :update_static_min_priority_comment do
+        require_atomic? false
+        accept []
+        argument(:comment, :map, allow_nil?: false)
+
+        change manage_relationship(:comment, :comments_with_static_min_priority,
+                 eager_validate_with: OtherDomain,
+                 on_no_match: :error,
+                 on_match: :update
+               )
+      end
     end
 
     attributes do
@@ -619,6 +631,30 @@ defmodule Ash.Test.Actions.HasManyTest do
                |> Ash.read!()
 
       assert result.id == matching_post.id
+    end
+
+    test "relationship read_action_arguments are passed when validating manage_relationship input" do
+      post =
+        Post
+        |> Ash.Changeset.for_create(:create, %{title: "Test Post"})
+        |> Ash.create!()
+
+      comment =
+        Comment
+        |> Ash.Changeset.for_create(:create, %{
+          post_id: post.id,
+          content: "original",
+          priority: 50
+        })
+        |> Ash.create!()
+
+      post
+      |> Ash.Changeset.for_update(:update_static_min_priority_comment, %{
+        comment: %{id: comment.id, content: "updated", priority: 90}
+      })
+      |> Ash.update!()
+
+      assert %{content: "updated", priority: 90} = Ash.get!(Comment, comment.id)
     end
 
     test "^arg in relationship filter resolves the action argument" do
