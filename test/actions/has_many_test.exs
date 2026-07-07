@@ -589,6 +589,38 @@ defmodule Ash.Test.Actions.HasManyTest do
       assert priorities == [50, 90]
     end
 
+    test "relationship read_action_arguments are passed when filtering on the relationship" do
+      matching_post =
+        Post
+        |> Ash.Changeset.for_create(:create, %{title: "Matching Post"})
+        |> Ash.create!()
+
+      non_matching_post =
+        Post
+        |> Ash.Changeset.for_create(:create, %{title: "Non Matching Post"})
+        |> Ash.create!()
+
+      for {post, priority} <- [
+            {matching_post, 50},
+            {non_matching_post, 10}
+          ] do
+        Comment
+        |> Ash.Changeset.for_create(:create, %{
+          post_id: post.id,
+          content: "comment #{priority}",
+          priority: priority
+        })
+        |> Ash.create!()
+      end
+
+      assert [result] =
+               Post
+               |> Ash.Query.filter(exists(comments_with_static_min_priority, priority == 50))
+               |> Ash.read!()
+
+      assert result.id == matching_post.id
+    end
+
     test "^arg in relationship filter resolves the action argument" do
       post =
         Post
