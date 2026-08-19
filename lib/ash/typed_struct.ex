@@ -99,6 +99,7 @@ defmodule Ash.TypedStruct do
     @field %Spark.Dsl.Entity{
       name: :field,
       target: Field,
+      no_depend_modules: [:constraints],
       describe: "A field on the struct",
       args: [:name, :type],
       transform: {Ash.Type, :set_type_transformation, []},
