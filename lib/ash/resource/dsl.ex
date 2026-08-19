@@ -563,7 +563,7 @@ defmodule Ash.Resource.Dsl do
     ],
     target: Ash.Resource.Actions.Create,
     schema: Ash.Resource.Actions.Create.opt_schema(),
-    no_depend_modules: [:manual, :touches_resources],
+    no_depend_modules: [:manual, :touches_resources, :error_handler, :notifiers],
     deprecations: [
       manual?: "Use the `manual` option instead, and provide an implementation."
     ],
@@ -624,7 +624,7 @@ defmodule Ash.Resource.Dsl do
       Ash.Expr
     ],
     target: Ash.Resource.Actions.Action,
-    no_depend_modules: [:constraints, :touches_resources],
+    no_depend_modules: [:constraints, :touches_resources, :run, :error_handler],
     schema: Ash.Resource.Actions.Action.opt_schema(),
     transform: {Ash.Resource.Actions.Action, :transform, []},
     entities: [
@@ -734,7 +734,7 @@ defmodule Ash.Resource.Dsl do
     deprecations: [
       manual?: "Use the `manual` option instead, and provide an implementation."
     ],
-    no_depend_modules: [:touches_resources, :manual],
+    no_depend_modules: [:touches_resources, :manual, :error_handler, :notifiers],
     target: Ash.Resource.Actions.Update,
     schema: Ash.Resource.Actions.Update.opt_schema(),
     transform: {Ash.Resource.Actions.Update, :transform, []},
@@ -763,7 +763,7 @@ defmodule Ash.Resource.Dsl do
     deprecations: [
       manual?: "Use the `manual` option instead, and provide an implementation."
     ],
-    no_depend_modules: [:touches_resources, :manual],
+    no_depend_modules: [:touches_resources, :manual, :error_handler, :notifiers],
     entities: [
       changes: [
         @action_change,
@@ -1484,6 +1484,7 @@ defmodule Ash.Resource.Dsl do
       """
     ],
     target: Ash.Resource.Aggregate,
+    no_depend_modules: [:implementation],
     args: [:name, :relationship_path, :type],
     entities: [
       join_filters: [@join_filter]
