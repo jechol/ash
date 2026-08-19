@@ -444,6 +444,7 @@ defmodule Ash.Resource.Dsl do
     ],
     target: Ash.Resource.Actions.Argument,
     args: [:name, :type],
+    no_depend_modules: [:constraints],
     transform: {Ash.Type, :set_type_transformation, []},
     schema: Ash.Resource.Actions.Argument.schema()
   }
@@ -623,6 +624,7 @@ defmodule Ash.Resource.Dsl do
       Ash.Expr
     ],
     target: Ash.Resource.Actions.Action,
+    no_depend_modules: [:constraints, :touches_resources],
     schema: Ash.Resource.Actions.Action.opt_schema(),
     transform: {Ash.Resource.Actions.Action, :transform, []},
     entities: [
@@ -1639,7 +1641,7 @@ defmodule Ash.Resource.Dsl do
       }
     ],
     target: Ash.Resource.Calculation,
-    no_depend_modules: [:calculation],
+    no_depend_modules: [:calculation, :constraints],
     args: [:name, :type, {:optional, :calculation}],
     entities: [
       arguments: [@argument]
