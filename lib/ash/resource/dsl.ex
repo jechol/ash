@@ -47,6 +47,7 @@ defmodule Ash.Resource.Dsl do
     ],
     transform: {Ash.Resource.Attribute, :transform, []},
     target: Ash.Resource.Attribute,
+    no_depend_modules: [:constraints],
     args: [:name, :type],
     schema: Ash.Resource.Attribute.attribute_schema()
   }
@@ -71,6 +72,7 @@ defmodule Ash.Resource.Dsl do
       "create_timestamp :inserted_at"
     ],
     target: Ash.Resource.Attribute,
+    no_depend_modules: [:constraints],
     args: [:name],
     schema: Ash.Resource.Attribute.create_timestamp_schema(),
     transform: {Ash.Resource.Attribute, :transform, []}
@@ -97,6 +99,7 @@ defmodule Ash.Resource.Dsl do
       "update_timestamp :updated_at"
     ],
     target: Ash.Resource.Attribute,
+    no_depend_modules: [:constraints],
     schema: Ash.Resource.Attribute.update_timestamp_schema(),
     args: [:name],
     transform: {Ash.Resource.Attribute, :transform, []}
@@ -125,6 +128,7 @@ defmodule Ash.Resource.Dsl do
     ],
     args: [:name],
     target: Ash.Resource.Attribute,
+    no_depend_modules: [:constraints],
     schema: Ash.Resource.Attribute.integer_primary_key_schema(),
     auto_set_fields: [allow_nil?: false],
     transform: {Ash.Resource.Attribute, :transform, []}
@@ -151,6 +155,7 @@ defmodule Ash.Resource.Dsl do
     ],
     args: [:name],
     target: Ash.Resource.Attribute,
+    no_depend_modules: [:constraints],
     schema: Ash.Resource.Attribute.uuid_primary_key_schema(),
     auto_set_fields: [allow_nil?: false],
     transform: {Ash.Resource.Attribute, :transform, []}
@@ -180,6 +185,7 @@ defmodule Ash.Resource.Dsl do
     ],
     args: [:name],
     target: Ash.Resource.Attribute,
+    no_depend_modules: [:constraints],
     schema: Ash.Resource.Attribute.uuid_v7_primary_key_schema(),
     auto_set_fields: [allow_nil?: false],
     transform: {Ash.Resource.Attribute, :transform, []}
@@ -464,6 +470,7 @@ defmodule Ash.Resource.Dsl do
       """
     ],
     target: Ash.Resource.Actions.Metadata,
+    no_depend_modules: [:constraints],
     args: [:name, :type],
     schema: Ash.Resource.Actions.Metadata.schema(),
     transform: {Ash.Type, :set_type_transformation, []}
@@ -676,7 +683,7 @@ defmodule Ash.Resource.Dsl do
     target: Ash.Resource.Actions.Read,
     schema: Ash.Resource.Actions.Read.opt_schema(),
     transform: {Ash.Resource.Actions.Read, :transform, []},
-    no_depend_modules: [:touches_resources, :manual],
+    no_depend_modules: [:touches_resources, :manual, :modify_query],
     entities: [
       arguments: [
         @action_argument
@@ -1031,6 +1038,7 @@ defmodule Ash.Resource.Dsl do
     ],
     singleton_entity_keys: [:transform],
     target: Ash.Resource.Interface.CustomInput,
+    no_depend_modules: [:constraints],
     args: [:name, :type],
     schema: Ash.Resource.Interface.CustomInput.schema(),
     transform: {Ash.Type, :set_type_transformation, []}
@@ -1267,6 +1275,7 @@ defmodule Ash.Resource.Dsl do
 
   @count %Spark.Dsl.Entity{
     name: :count,
+    no_depend_modules: [:relationship_path],
     describe: """
     Declares a named count aggregate on the resource
 
@@ -1305,6 +1314,7 @@ defmodule Ash.Resource.Dsl do
 
   @first %Spark.Dsl.Entity{
     name: :first,
+    no_depend_modules: [:relationship_path],
     describe: """
     Declares a named `first` aggregate on the resource
 
@@ -1339,6 +1349,7 @@ defmodule Ash.Resource.Dsl do
 
   @max %Spark.Dsl.Entity{
     name: :max,
+    no_depend_modules: [:relationship_path],
     describe: """
     Declares a named `max` aggregate on the resource
 
@@ -1365,6 +1376,7 @@ defmodule Ash.Resource.Dsl do
 
   @min %Spark.Dsl.Entity{
     name: :min,
+    no_depend_modules: [:relationship_path],
     describe: """
     Declares a named `min` aggregate on the resource
 
@@ -1391,6 +1403,7 @@ defmodule Ash.Resource.Dsl do
 
   @sum %Spark.Dsl.Entity{
     name: :sum,
+    no_depend_modules: [:relationship_path],
     describe: """
     Declares a named `sum` aggregate on the resource
 
@@ -1417,6 +1430,7 @@ defmodule Ash.Resource.Dsl do
 
   @avg %Spark.Dsl.Entity{
     name: :avg,
+    no_depend_modules: [:relationship_path],
     describe: """
     Declares a named `avg` aggregate on the resource
 
@@ -1443,6 +1457,7 @@ defmodule Ash.Resource.Dsl do
 
   @exists %Spark.Dsl.Entity{
     name: :exists,
+    no_depend_modules: [:relationship_path],
     describe: """
     Declares a named `exists` aggregate on the resource
 
@@ -1484,7 +1499,7 @@ defmodule Ash.Resource.Dsl do
       """
     ],
     target: Ash.Resource.Aggregate,
-    no_depend_modules: [:implementation],
+    no_depend_modules: [:relationship_path, :implementation],
     args: [:name, :relationship_path, :type],
     entities: [
       join_filters: [@join_filter]
@@ -1507,6 +1522,7 @@ defmodule Ash.Resource.Dsl do
 
   @list %Spark.Dsl.Entity{
     name: :list,
+    no_depend_modules: [:relationship_path],
     describe: """
     Declares a named `list` aggregate on the resource.
 
@@ -1597,6 +1613,7 @@ defmodule Ash.Resource.Dsl do
       """
     ],
     target: Ash.Resource.Calculation.Argument,
+    no_depend_modules: [:constraints],
     args: [:name, :type],
     schema: Ash.Resource.Calculation.Argument.schema(),
     transform: {Ash.Type, :set_type_transformation, []}
@@ -1676,6 +1693,7 @@ defmodule Ash.Resource.Dsl do
 
   @multitenancy %Spark.Dsl.Section{
     name: :multitenancy,
+    no_depend_modules: [:parse_attribute, :tenant_from_attribute],
     describe: """
     Options for configuring the multitenancy behavior of a resource.
 

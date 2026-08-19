@@ -159,6 +159,7 @@ defmodule Ash.Domain.Dsl do
   @resources %Spark.Dsl.Section{
     name: :resources,
     describe: "List the resources of this domain",
+    no_depend_modules: [:allow],
     examples: [
       """
       resources do
