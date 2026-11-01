@@ -2258,50 +2258,80 @@ defmodule Ash.Actions.Read.Relationships do
     end)
   end
 
+  # Scoped nodes own their traversal. Falling back after a negative result would
+  # revisit children at the wrong depth and can make nested exists exponential.
   @doc false
-  def do_has_parent_expr?(filter, depth \\ 0) do
-    not is_nil(
-      Ash.Filter.find(
-        filter,
-        fn
-          %Ash.Query.Call{name: :parent, args: [expr]} ->
-            if depth == 0 do
-              true
-            else
-              do_has_parent_expr?(expr, depth - 1)
-            end
+  def do_has_parent_expr?(filter, depth \\ 0)
 
-          %Ash.Query.Exists{expr: expr} ->
-            do_has_parent_expr?(expr, depth + 1)
-
-          %Ash.Query.Parent{expr: expr} ->
-            if depth == 0 do
-              true
-            else
-              do_has_parent_expr?(expr, depth - 1)
-            end
-
-          %Ash.Query.Ref{
-            attribute: %Ash.Query.Aggregate{
-              field: %Ash.Query.Calculation{module: module, opts: opts, context: context}
-            }
-          } ->
-            if Ash.Resource.Calculation.has_expression?(module) do
-              Ash.Resource.Calculation.expression(module, opts, context)
-              |> do_has_parent_expr?(depth + 1)
-            else
-              false
-            end
-
-          _other ->
-            false
-        end,
-        true,
-        true,
-        true
-      )
-    )
+  def do_has_parent_expr?(%Ash.Query.Call{name: :parent, args: [expr]}, depth) do
+    depth == 0 || do_has_parent_expr?(expr, depth - 1)
   end
+
+  def do_has_parent_expr?(%Ash.Query.Parent{expr: expr}, depth) do
+    depth == 0 || do_has_parent_expr?(expr, depth - 1)
+  end
+
+  def do_has_parent_expr?(%Ash.Query.Exists{expr: expr}, depth) do
+    do_has_parent_expr?(expr, depth + 1)
+  end
+
+  def do_has_parent_expr?(%Ash.Query.Ref{attribute: %Ash.Query.Aggregate{} = aggregate}, depth),
+    do: do_has_parent_expr?(aggregate, depth)
+
+  # A reference's type metadata and a query's execution context are not expressions.
+  def do_has_parent_expr?(%Ash.Query.Ref{attribute: %Ash.Resource.Attribute{}}, _depth),
+    do: false
+
+  def do_has_parent_expr?(%Ash.Query{filter: filter, sort: sort}, depth),
+    do: do_has_parent_expr?(filter, depth) || do_has_parent_expr?(sort, depth)
+
+  def do_has_parent_expr?(%Ash.Query.Aggregate{} = aggregate, depth),
+    do:
+      do_has_parent_expr?(aggregate.field, depth + 1) ||
+        do_has_parent_expr?(aggregate.query, depth) ||
+        do_has_parent_expr?(aggregate.join_filters, depth)
+
+  def do_has_parent_expr?(
+        %Ash.Query.Calculation{module: module, opts: opts, context: context},
+        depth
+      ) do
+    if Ash.Resource.Calculation.has_expression?(module) do
+      module
+      |> Ash.Resource.Calculation.expression(opts, context)
+      |> do_has_parent_expr?(depth)
+    else
+      false
+    end
+  end
+
+  def do_has_parent_expr?(%Ash.Filter{expression: expression}, depth),
+    do: do_has_parent_expr?(expression, depth)
+
+  def do_has_parent_expr?(%Ash.Query.Not{expression: expression}, depth),
+    do: do_has_parent_expr?(expression, depth)
+
+  def do_has_parent_expr?(%Ash.Query.BooleanExpression{left: left, right: right}, depth),
+    do: do_has_parent_expr?(left, depth) || do_has_parent_expr?(right, depth)
+
+  def do_has_parent_expr?(%Ash.Query.Call{args: args}, depth),
+    do: do_has_parent_expr?(args, depth)
+
+  def do_has_parent_expr?(%{__operator__?: true, left: left, right: right}, depth),
+    do: do_has_parent_expr?(left, depth) || do_has_parent_expr?(right, depth)
+
+  def do_has_parent_expr?(%{__function__?: true, arguments: arguments}, depth),
+    do: do_has_parent_expr?(arguments, depth)
+
+  def do_has_parent_expr?(tuple, depth) when is_tuple(tuple),
+    do: tuple |> Tuple.to_list() |> do_has_parent_expr?(depth)
+
+  def do_has_parent_expr?(list, depth) when is_list(list),
+    do: Enum.any?(list, &do_has_parent_expr?(&1, depth))
+
+  def do_has_parent_expr?(map, depth) when is_map(map),
+    do: map |> Map.to_list() |> do_has_parent_expr?(depth)
+
+  def do_has_parent_expr?(_other, _depth), do: false
 
   defp apply_relationship_offset(query, relationship) do
     if Map.get(relationship, :offset) do
